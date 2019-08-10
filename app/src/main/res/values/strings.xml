@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">EffectiveCamera</string>
+    <string name="camera_num">CameraNumber</string>
+</resources>
