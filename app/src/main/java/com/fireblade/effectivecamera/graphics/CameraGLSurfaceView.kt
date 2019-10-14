@@ -8,6 +8,7 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.util.Size
 import com.fireblade.effectivecamera.graphics.common.RenderEffect
+import com.fireblade.effectivecamera.graphics.effects.EffectConfig
 
 
 class CameraGLSurfaceView(context: Context, attrs: AttributeSet) : GLSurfaceView(context, attrs) {
@@ -36,13 +37,17 @@ class CameraGLSurfaceView(context: Context, attrs: AttributeSet) : GLSurfaceView
     renderer.setCaptureResolution(resolution)
   }
 
-  fun initializeEffect() {
+  fun initializeEffect(effectConfig: EffectConfig) {
 
-    renderer.initializeEffect()
+    renderer.initializeEffect(effectConfig)
   }
 
   fun setRenderEffect(renderEffect: RenderEffect) {
     renderer.setActiveEffect(renderEffect)
+  }
+
+  fun setEffectConfig(effectConfig: EffectConfig) {
+    renderer.setEffectConfig(effectConfig)
   }
 
   fun renderingContextInitialized() {

@@ -9,8 +9,11 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Size
 import android.view.Surface
+import androidx.lifecycle.ViewModelProvider
 import com.fireblade.effectivecamera.graphics.common.IRenderEffect
 import com.fireblade.effectivecamera.graphics.common.RenderEffect
+import com.fireblade.effectivecamera.graphics.common.RenderShaderSource
+import com.fireblade.effectivecamera.graphics.common.ShaderSource
 import com.fireblade.effectivecamera.graphics.effects.EffectConfig
 import com.fireblade.effectivecamera.graphics.services.ShaderSourceFetcher
 import kotlinx.android.synthetic.main.fragment_camera.*
@@ -54,6 +57,8 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
   private val drawCommands = mutableListOf<()->Unit>()
 
+  private lateinit var shaderSource: RenderShaderSource
+
   internal fun onResume() {
     glInit = true
   }
@@ -70,6 +75,12 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
     captureSurfaceTexture = SurfaceTexture(cameraTextures[1])
     captureSurfaceTexture.setOnFrameAvailableListener(this)
+
+    view.context?.let {
+      val shaderManager = ShaderSourceFetcher(it)
+      shaderSource = shaderManager.loadShaderProgram("basicVertex", "effect")
+      //initializeEffect(EffectConfig("Normal"))
+    }
 
     view.renderingContextInitialized()
 
@@ -160,12 +171,14 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 //    }
   }
 
-  fun initializeEffect() {
+  fun initializeEffect(effectConfig: EffectConfig) {
 
     view.context?.let {
       val shaderManager = ShaderSourceFetcher(it)
 
-      val renderEffect = RenderEffect(shaderManager.loadShaderProgram("basicVertex", "effect"), EffectConfig("Normal"))
+      shaderSource = shaderManager.loadShaderProgram("basicVertex", "effect")
+
+      val renderEffect = RenderEffect(shaderSource, effectConfig)
 
       setActiveEffect(renderEffect)
     }
@@ -179,6 +192,13 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
       effectLock.release()
     }
+  }
+
+  fun setEffectConfig(effectConfig: EffectConfig) {
+
+    val renderEffect = RenderEffect(shaderSource, effectConfig)
+
+    setActiveEffect(renderEffect)
   }
 
   fun getPreviewTexture(): SurfaceTexture {

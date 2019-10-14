@@ -27,17 +27,22 @@ import android.widget.ImageButton
 import androidx.camera.core.ImageCapture
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.Navigation
 import com.fireblade.effectivecamera.*
 import com.fireblade.effectivecamera.graphics.IRendererEvents
+import com.fireblade.effectivecamera.graphics.effects.EffectConfig
+import com.fireblade.effectivecamera.graphics.services.EffectViewModel
 import com.fireblade.effectivecamera.utils.*
 import kotlinx.android.synthetic.main.fragment_camera.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+//import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -143,7 +148,14 @@ class CameraFragment : Fragment(), IRendererEvents {
 
     openCamera()
 
-    camera_preview.initializeEffect()
+    activity?.let { fragmentActivity ->
+      val viewModel = ViewModelProvider.AndroidViewModelFactory(fragmentActivity.application).create(EffectViewModel::class.java)
+      viewModel.getEffectConfig().observe(this, androidx.lifecycle.Observer<EffectConfig> {
+        camera_preview.initializeEffect(it)
+      })
+    }
+
+
   }
 
   override fun onCaptureFinished() {
@@ -249,6 +261,11 @@ class CameraFragment : Fragment(), IRendererEvents {
     // Listener for button used to switch cameras
     controls.findViewById<ImageButton>(R.id.camera_switch_button).setOnClickListener {
     }
+    controls.findViewById<ImageButton>(R.id.camera_settings_button).setOnClickListener {
+      Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+        CameraFragmentDirections.actionCameraToSettings()
+      )
+    }
   }
 
   private fun setResolutions(width: Int, height: Int) {
@@ -262,13 +279,18 @@ class CameraFragment : Fragment(), IRendererEvents {
           }
 
           mCameraID = cameraID
-          val resolutions = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(
-            SurfaceTexture::class.java
-          )
-          cameraResolution = Collections.max(resolutions.toMutableList(), CompareSizesByArea())
-          camera_preview.setCaptureResolution(cameraResolution)
-          previewResolution =
-            getPreviewResolution(resolutions, width, height)//getPreferredResolution(resolutions, width, height)
+          characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.let { streamConfigurationMap ->
+            val resolutions = streamConfigurationMap.getOutputSizes(SurfaceTexture::class.java)
+            cameraResolution = Collections.max(resolutions.toMutableList(), CompareSizesByArea())
+            camera_preview.setCaptureResolution(cameraResolution)
+
+            previewResolution =
+              getPreviewResolution(
+                resolutions,
+                width,
+                height
+              )
+          }
           break
         }
       } catch (e: CameraAccessException) {
@@ -298,37 +320,10 @@ class CameraFragment : Fragment(), IRendererEvents {
       }
     }
 
-    if (preferredResolutions.isNotEmpty()) {
-      return Collections.max(preferredResolutions, CompareSizesByArea())
-    } else if (acceptableResolutions.isNotEmpty()) {
-      return Collections.max(acceptableResolutions, CompareSizesByArea())
-    } else {
-      return findNearestResolution(resolutions, Size(screenWidth, screenHeight))
-    }
-  }
-
-  private fun getPreferredResolution(resolutions: Array<Size>, screenWidth: Int, screenHeight: Int): Size {
-    val screenAspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
-    val preferredResolutions: ArrayList<Size> = arrayListOf()
-    var minDiff = 5.0f
-    var preferredResolution = Size(screenWidth, screenHeight)
-    for (resolution in resolutions) {
-      if ((screenWidth == resolution.width && screenHeight == resolution.height) || (screenWidth == resolution.height && screenHeight == resolution.width)) {
-        return resolution
-      }
-      val aspectRatio = resolution.width.toFloat() / resolution.height.toFloat()
-      if (aspectRatio == screenAspectRatio) {
-        preferredResolutions.add(resolution)
-      } else if (abs(aspectRatio - screenAspectRatio) < minDiff) {
-        minDiff = abs(aspectRatio - screenAspectRatio)
-        preferredResolution = resolution
-      }
-    }
-    if (preferredResolutions.isNotEmpty()) {
-
-      return findNearestResolution(preferredResolutions.toTypedArray(), Size(screenWidth, screenHeight))
-    } else {
-      return preferredResolution
+    return when {
+      preferredResolutions.isNotEmpty() -> Collections.max(preferredResolutions, CompareSizesByArea())
+      acceptableResolutions.isNotEmpty() -> Collections.max(acceptableResolutions, CompareSizesByArea())
+      else -> findNearestResolution(resolutions, Size(screenWidth, screenHeight))
     }
   }
 
@@ -392,9 +387,9 @@ class CameraFragment : Fragment(), IRendererEvents {
       createCameraPreviewSession()
     }
 
-    override fun onClosed(camera: CameraDevice?) {
+    override fun onClosed(camera: CameraDevice) {
       cameraOpenCloseLock.release()
-      camera?.close()
+      camera.close()
       mCameraDevice = null
     }
 
@@ -422,41 +417,74 @@ class CameraFragment : Fragment(), IRendererEvents {
       val captureSurface = Surface(camera_preview.getCaptureSurfaceTex())
 
       previewRequestBuilder = mCameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-      previewRequestBuilder?.addTarget(previewSurface)
 
-      captureRequestBuilder = mCameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-      captureRequestBuilder?.addTarget(captureSurface)
+      previewRequestBuilder?.let { previewBuilder ->
+        previewBuilder.addTarget(previewSurface)
 
-      mCameraDevice?.createCaptureSession(
-        Arrays.asList(previewSurface, captureSurface),
-        object : CameraCaptureSession.StateCallback() {
-          override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-            if (null == mCameraDevice) {
-              return
+        captureRequestBuilder =
+          mCameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+        captureRequestBuilder?.addTarget(captureSurface)
+
+        mCameraDevice?.createCaptureSession(
+          listOf(previewSurface, captureSurface),
+          object : CameraCaptureSession.StateCallback() {
+            override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+              if (null == mCameraDevice) {
+                return
+              }
+
+              captureSession = cameraCaptureSession
+              try {
+                previewBuilder.set(
+                  CaptureRequest.CONTROL_AF_MODE,
+                  CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                )
+                previewBuilder.set(
+                  CaptureRequest.CONTROL_AE_MODE,
+                  CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+                )
+                previewBuilder.set(
+                  CaptureRequest.CONTROL_AWB_MODE,
+                  CaptureRequest.CONTROL_AWB_MODE_AUTO
+                )
+
+                captureRequestBuilder?.set(
+                  CaptureRequest.CONTROL_AF_MODE,
+                  CaptureRequest.CONTROL_AF_MODE_AUTO
+                )
+                captureRequestBuilder?.set(
+                  CaptureRequest.CONTROL_AE_MODE,
+                  CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+                )
+                captureRequestBuilder?.set(
+                  CaptureRequest.CONTROL_AWB_MODE,
+                  CaptureRequest.CONTROL_AWB_MODE_AUTO
+                )
+                captureRequestBuilder?.set(
+                  CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                  CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START
+                )
+                captureRequestBuilder?.set(
+                  CaptureRequest.CONTROL_AF_TRIGGER,
+                  CaptureRequest.CONTROL_AF_TRIGGER_START
+                )
+
+                captureSession?.setRepeatingRequest(
+                  previewBuilder.build(),
+                  null,
+                  backgroundHandler
+                )
+              } catch (e: CameraAccessException) {
+                //Timber.i("createCaptureSession - Camera Access Exception: $e")
+              }
+
             }
 
-            captureSession = cameraCaptureSession
-            try {
-              previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-              previewRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-              previewRequestBuilder?.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
-
-              captureRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
-              captureRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-              captureRequestBuilder?.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
-              captureRequestBuilder?.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
-              captureRequestBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
-
-              captureSession?.setRepeatingRequest(previewRequestBuilder?.build(), null, backgroundHandler)
-            } catch (e: CameraAccessException) {
-              //Timber.i("createCaptureSession - Camera Access Exception: $e")
+            override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
             }
-
-          }
-
-          override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-          }
-        }, null)
+          }, null
+        )
+      }
     } catch (e: CameraAccessException) {
       //Timber.i("createCameraPreviewSession - Camera Access Exception: $e")
     }
