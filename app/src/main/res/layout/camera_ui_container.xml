@@ -31,6 +31,18 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginBottom="20sp"/>
 
+    <ImageButton
+            android:id="@+id/camera_settings_button"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:backgroundTint="@android:color/white"
+            android:src="@drawable/camera_settings_icon"
+            app:layout_constraintBottom_toBottomOf="@id/camera_capture_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/camera_capture_button"
+            app:layout_constraintTop_toTopOf="@id/camera_capture_button" />
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

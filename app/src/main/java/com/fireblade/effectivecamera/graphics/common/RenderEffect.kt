@@ -73,7 +73,7 @@ class RenderEffect(private val shaderProgram: RenderShaderSource, private val ef
     shader.setExternalTexture(cameraTexture.textureID, cameraTexture.index, cameraTexture.name)
 
     effectConfig.properties.map { attribute ->
-      shader.setFloatAttribute(attribute.key, attribute.value)
+      shader.setFloatAttribute(attribute.key, attribute.value.currentValue)
     }
   }
 
