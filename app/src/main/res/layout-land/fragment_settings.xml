@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:clickable="true"
+        android:focusable="true"
+        android:id="@+id/settings_layout">
+
+    <ProgressBar
+            android:id="@+id/settings_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:progressTint="@android:color/white"
+            android:progressBackgroundTint="@android:color/white"
+            android:background="@color/colorSemiTransparentGrey"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/settings_control_list"
+            app:layout_constraintBottom_toTopOf="@id/settings_text_view" />
+
+    <TextView
+            android:id="@+id/settings_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="120dp"
+            android:text="Brightness: 0"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:background="@drawable/rounded_rect"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/settings_progress_bar"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/settings_control_list"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@color/colorSemiTransparentGrey"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

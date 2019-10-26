@@ -44,5 +44,5 @@ void main()
 
     adjustedColor = mix(adjustedColor, negativeColor, invert);
 
-    fragColor = texture(cameraTexture, textureCoordinates.xy);//vec4(adjustedColor, 1.0f);
+    fragColor = vec4(adjustedColor, 1.0f);
 }

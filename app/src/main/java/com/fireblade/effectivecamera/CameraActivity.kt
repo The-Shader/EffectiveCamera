@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Bundle
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProviders
+import com.fireblade.effectivecamera.graphics.services.EffectViewModel
 import com.fireblade.effectivecamera.utils.FLAGS_FULLSCREEN
 import java.io.File
 
@@ -17,8 +19,12 @@ class CameraActivity :
 
   private lateinit var container: FrameLayout
 
+  private lateinit var effectViewModel: EffectViewModel
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    effectViewModel = ViewModelProviders.of(this)[EffectViewModel::class.java]
 
     setContentView(R.layout.activity_camera)
 
