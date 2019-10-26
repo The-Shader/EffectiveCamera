@@ -23,11 +23,12 @@ import android.util.Rational
 import android.util.Size
 import android.view.*
 import android.webkit.MimeTypeMap
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import androidx.camera.core.ImageCapture
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.Navigation
 import com.fireblade.effectivecamera.*
@@ -39,7 +40,6 @@ import kotlinx.android.synthetic.main.fragment_camera.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-//import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
@@ -49,7 +49,7 @@ import kotlin.math.min
 
 class CameraFragment : Fragment(), IRendererEvents {
 
-  private lateinit var container: ConstraintLayout
+  private lateinit var container: FrameLayout
   private lateinit var outputDirectory: File
   private lateinit var broadcastManager: LocalBroadcastManager
 
@@ -149,13 +149,11 @@ class CameraFragment : Fragment(), IRendererEvents {
     openCamera()
 
     activity?.let { fragmentActivity ->
-      val viewModel = ViewModelProvider.AndroidViewModelFactory(fragmentActivity.application).create(EffectViewModel::class.java)
+      val viewModel = ViewModelProviders.of(fragmentActivity)[EffectViewModel::class.java]
       viewModel.getEffectConfig().observe(this, androidx.lifecycle.Observer<EffectConfig> {
         camera_preview.initializeEffect(it)
       })
     }
-
-
   }
 
   override fun onCaptureFinished() {
@@ -206,7 +204,7 @@ class CameraFragment : Fragment(), IRendererEvents {
   @SuppressLint("MissingPermission")
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    container = view as ConstraintLayout
+    container = view as FrameLayout//ConstraintLayout
     broadcastManager = LocalBroadcastManager.getInstance(view.context)
 
     // Set up the intent filter that will receive events from our main activity
@@ -262,6 +260,7 @@ class CameraFragment : Fragment(), IRendererEvents {
     controls.findViewById<ImageButton>(R.id.camera_switch_button).setOnClickListener {
     }
     controls.findViewById<ImageButton>(R.id.camera_settings_button).setOnClickListener {
+
       Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
         CameraFragmentDirections.actionCameraToSettings()
       )

@@ -14,4 +14,6 @@ class SettingsItem (private val effectAttribute: FloatEffectAttribute): Item() {
     viewHolder.itemView.settings_description.text = effectAttribute.displayName
     viewHolder.itemView.settings_value.text = effectAttribute.currentValue.toString()
   }
+
+  fun floatEffectAttribute() = effectAttribute
 }

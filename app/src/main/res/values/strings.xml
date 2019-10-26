@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">EffectiveCamera</string>
     <string name="camera_num">CameraNumber</string>
+    <string name="settings_property">%1s: %2s</string>
 </resources>

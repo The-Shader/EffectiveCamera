@@ -3,12 +3,16 @@ package com.fireblade.effectivecamera.fragments
 import android.os.Bundle
 import android.view.*
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.fireblade.effectivecamera.R
 import com.fireblade.effectivecamera.graphics.effects.EffectConfig
+import com.fireblade.effectivecamera.graphics.effects.FloatEffectAttribute
 import com.fireblade.effectivecamera.graphics.services.EffectViewModel
 import com.fireblade.effectivecamera.settings.SettingsItem
 import com.xwray.groupie.GroupAdapter
+import com.xwray.groupie.OnItemClickListener
 import com.xwray.groupie.kotlinandroidextensions.ViewHolder
 import kotlinx.android.synthetic.main.fragment_settings.*
 import kotlin.math.abs
@@ -19,11 +23,22 @@ class SettingsFragment : Fragment(), View.OnTouchListener {
 
   lateinit var velocityTracker: VelocityTracker
 
-  var settingsPropertyDisplayName: String = "Placeholder"
+  private var settingsPropertyFactor: Float = 1.0f
 
-  var settingsPropertyFactor: Float = 1.0f
+  lateinit var selectedEffectAttribute: FloatEffectAttribute
 
   private val settingsAdapter: GroupAdapter<ViewHolder> by lazy { GroupAdapter<ViewHolder>() }
+
+  private val effectViewModel: EffectViewModel by lazy {
+    activity?.let { fragmentActivity ->
+      ViewModelProviders.of(fragmentActivity)[EffectViewModel::class.java]
+    } ?: EffectViewModel()
+  }
+
+  val effectObserver = Observer<EffectConfig> {
+    settingsAdapter.addAll( it.properties.map { attribute -> SettingsItem(attribute.value) })
+    selectedEffectAttribute = it.brightness
+  }
 
   override fun onCreateView(
     inflater: LayoutInflater,
@@ -34,15 +49,22 @@ class SettingsFragment : Fragment(), View.OnTouchListener {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
-    activity?.let { fragmentActivity ->
-      val viewModel = ViewModelProvider.AndroidViewModelFactory(fragmentActivity.application).create(
-        EffectViewModel::class.java)
-      viewModel.getEffectConfig().observe(this, androidx.lifecycle.Observer<EffectConfig> {
-        settingsAdapter.addAll( it.properties.map { attribute -> SettingsItem(attribute.value) })
-      })
+    settings_control_list.adapter = settingsAdapter
+    settings_control_list.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+
+    settingsAdapter.apply {
+      setOnItemClickListener(onItemClickListener)
     }
 
+    effectViewModel.getEffectConfig().observeForever(effectObserver)
+
     settings_layout.setOnTouchListener(this)
+  }
+
+  override fun onDestroy() {
+
+    effectViewModel.getEffectConfig().removeObserver(effectObserver)
+    super.onDestroy()
   }
 
   override fun onTouch(view: View, event: MotionEvent): Boolean {
@@ -84,12 +106,36 @@ class SettingsFragment : Fragment(), View.OnTouchListener {
     return true
   }
 
-  private fun changeProgress(value: Int) {
-    /*settings_progress_bar.progress += value
-    val propertyName = effectService.selectedEffectPropertyName()
-    val propertyValue = if (propertyName == "hueRotation") (settings_progress_bar.progress.toFloat() - 360) else settings_progress_bar.progress.toFloat() / 100.0f
+  private val onItemClickListener = OnItemClickListener { item, _ ->
+    if (item is SettingsItem) {
+      selectedEffectAttribute = item.floatEffectAttribute()
+      val range = (selectedEffectAttribute.maxValue.toString().toFloat() - selectedEffectAttribute.minValue.toString().toFloat()).toInt()
+      val propertyValue = selectedEffectAttribute.currentValue.toString().toFloat() - selectedEffectAttribute.minValue.toString().toFloat()
+      val factor = if (selectedEffectAttribute.name != "hueRotation") 100.0f else 1f
 
-    effectService.selectEffectProperty(propertyName, propertyValue)
-    settings_text_view.text = getString(R.string.settings_property, settingsPropertyDisplayName, propertyValue.toString())*/
+      settings_progress_bar.apply {
+        max = (range * factor).toInt()
+        progress = (propertyValue * factor).toInt()
+      }
+      settingsPropertyFactor = settings_progress_bar.max.toFloat() / 200.0f
+      settings_text_view.text = getString(R.string.settings_property, selectedEffectAttribute.displayName, propertyValue.toString())
+    }
+  }
+
+  private fun changeProgress(value: Int) {
+
+    settings_progress_bar.progress += value
+    selectedEffectAttribute.currentValue =
+      if (selectedEffectAttribute.name == "hueRotation") {
+        (settings_progress_bar.progress.toFloat() - 360)
+      } else {
+        settings_progress_bar.progress.toFloat() / 100.0f
+      }
+
+    effectViewModel.changeProperty(selectedEffectAttribute)
+
+    settingsAdapter.notifyDataSetChanged()
+
+    settings_text_view.text = getString(R.string.settings_property, selectedEffectAttribute.displayName, selectedEffectAttribute.currentValue.toString())
   }
 }
