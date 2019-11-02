@@ -2,4 +2,7 @@
     <string name="app_name">EffectiveCamera</string>
     <string name="camera_num">CameraNumber</string>
     <string name="settings_property">%1s: %2s</string>
+    <string name="swap_camera_desc">Swap Camera</string>
+    <string name="capture_desc">Capture</string>
+    <string name="settings_desc">Settings</string>
 </resources>

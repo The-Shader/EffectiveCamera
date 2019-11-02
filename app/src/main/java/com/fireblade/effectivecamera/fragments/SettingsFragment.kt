@@ -21,11 +21,11 @@ class SettingsFragment : Fragment(), View.OnTouchListener {
 
   private var previousTouchPos = -1
 
-  lateinit var velocityTracker: VelocityTracker
+  private lateinit var velocityTracker: VelocityTracker
 
   private var settingsPropertyFactor: Float = 1.0f
 
-  lateinit var selectedEffectAttribute: FloatEffectAttribute
+  private lateinit var selectedEffectAttribute: FloatEffectAttribute
 
   private val settingsAdapter: GroupAdapter<ViewHolder> by lazy { GroupAdapter<ViewHolder>() }
 
@@ -35,7 +35,7 @@ class SettingsFragment : Fragment(), View.OnTouchListener {
     } ?: EffectViewModel()
   }
 
-  val effectObserver = Observer<EffectConfig> {
+  private val effectObserver = Observer<EffectConfig> {
     settingsAdapter.addAll( it.properties.map { attribute -> SettingsItem(attribute.value) })
     selectedEffectAttribute = it.brightness
   }
