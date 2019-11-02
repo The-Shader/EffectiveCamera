@@ -21,8 +21,8 @@ class PermissionsFragment : Fragment() {
       requestPermissions(arrayOf(
         Manifest.permission.CAMERA), requestCamera)
     } else {
-      Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-        PermissionsFragmentDirections.actionPermissionsToCamera()
+      Navigation.findNavController(requireActivity(), R.id.nav_fragment).navigate(
+        PermissionsFragmentDirections.actionPermissionsFragmentToCameraControlsFragment()
       )
     }
   }
@@ -31,8 +31,8 @@ class PermissionsFragment : Fragment() {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     if (requestCode == requestCamera) {
       if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
-          PermissionsFragmentDirections.actionPermissionsToCamera()
+        Navigation.findNavController(requireActivity(), R.id.nav_fragment).navigate(
+          PermissionsFragmentDirections.actionPermissionsFragmentToCameraControlsFragment()
         )
       } else {
         Toast.makeText(context, "Permission is denied for Camera", Toast.LENGTH_SHORT).show()
