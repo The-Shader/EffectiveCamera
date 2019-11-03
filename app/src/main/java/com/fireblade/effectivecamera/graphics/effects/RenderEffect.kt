@@ -1,18 +1,22 @@
-package com.fireblade.effectivecamera.graphics.common
+package com.fireblade.effectivecamera.graphics.effects
 
 import android.opengl.GLES31.*
-import com.fireblade.effectivecamera.graphics.effects.EffectConfig
+import com.fireblade.effectivecamera.graphics.common.RenderShaderSource
+import com.fireblade.effectivecamera.graphics.common.Shader
+import com.fireblade.effectivecamera.graphics.common.Texture2D
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class RenderEffect(private val shaderProgram: RenderShaderSource, private val effectConfig: EffectConfig) : IRenderEffect {
+class RenderEffect(private val shaderProgram: RenderShaderSource, private val effectConfig: EffectConfig) :
+  IRenderEffect {
 
   var frameBufferObject: Int = 0
 
   val shader by lazy { Shader(shaderProgram.program) }
 
-  var cameraTexture: Texture2D = Texture2D()
+  var cameraTexture: Texture2D =
+    Texture2D()
 
   var textureTransformMatrix: FloatArray = floatArrayOf(0.0f)
 
@@ -46,12 +50,17 @@ class RenderEffect(private val shaderProgram: RenderShaderSource, private val ef
       }
   }
 
-  fun setTexture(texture: Int) {
-
-    cameraTexture = Texture2D("cameraTexture", GL_TEXTURE0, texture)
+  override fun setFrameBuffer(frameBuffer: Int) {
+    frameBufferObject = frameBuffer
   }
 
-  fun setTextureMatrix(textureMatrix: FloatArray) {
+  override fun setTexture(texture: Int) {
+
+    cameraTexture =
+      Texture2D("cameraTexture", GL_TEXTURE0, texture)
+  }
+
+  override fun setTextureMatrix(textureMatrix: FloatArray) {
     textureTransformMatrix = textureMatrix
   }
 

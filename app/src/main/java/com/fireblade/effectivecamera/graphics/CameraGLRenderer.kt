@@ -9,21 +9,15 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Size
 import android.view.Surface
-import androidx.lifecycle.ViewModelProvider
-import com.fireblade.effectivecamera.graphics.common.IRenderEffect
-import com.fireblade.effectivecamera.graphics.common.RenderEffect
-import com.fireblade.effectivecamera.graphics.common.RenderShaderSource
-import com.fireblade.effectivecamera.graphics.common.ShaderSource
-import com.fireblade.effectivecamera.graphics.effects.EffectConfig
-import com.fireblade.effectivecamera.graphics.services.ShaderSourceFetcher
-import kotlinx.android.synthetic.main.fragment_camera.*
+import com.fireblade.effectivecamera.graphics.effects.IRenderEffect
+import com.fireblade.effectivecamera.graphics.effects.RenderEffect
 import java.nio.ByteBuffer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+class CameraGLRenderer(private val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
   private val cameraTextures: IntArray = IntArray(2)
 
@@ -57,8 +51,6 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
   private val drawCommands = mutableListOf<()->Unit>()
 
-  private lateinit var shaderSource: RenderShaderSource
-
   internal fun onResume() {
     glInit = true
   }
@@ -75,12 +67,6 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
     captureSurfaceTexture = SurfaceTexture(cameraTextures[1])
     captureSurfaceTexture.setOnFrameAvailableListener(this)
-
-    view.context?.let {
-      val shaderManager = ShaderSourceFetcher(it)
-      shaderSource = shaderManager.loadShaderProgram("basicVertex", "effect")
-      //initializeEffect(EffectConfig("Normal"))
-    }
 
     view.renderingContextInitialized()
 
@@ -99,7 +85,7 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
     glInit = true
   }
 
-  fun setViewPort(renderTargetSize: Size) {
+  private fun setViewPort(renderTargetSize: Size) {
 
     glViewport(0, 0, renderTargetSize.width, renderTargetSize.height)
   }
@@ -123,64 +109,23 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
   private fun applyRenderEffect() {
 
-    renderEffect?.let { it as RenderEffect}?.also { effect ->
+    renderEffect?.let { effect ->
       effect.setTexture(cameraTextures[0])
       effect.setTextureMatrix(previewTextureTransform)
       effect.render()
     }
-
-//    if (renderEffect == null) {
-//      return
-//    }
-//
-//    if (renderEffect is RenderEffect) {
-//
-//      val effect = renderEffect as RenderEffect
-//
-//      effect.setTexture(cameraTextures[0])
-//      effect.setTextureMatrix(previewTextureTransform)
-//      effect.render()
-//    }
   }
 
   private fun applyCaptureRenderEffect() {
-    renderEffect?.let { it as RenderEffect}?.also { effect ->
+
+    renderEffect?.let { effect ->
       initImageTextures()
       initRenderBuffers()
 
-      (renderEffect as RenderEffect?)?.frameBufferObject = frameBuffers[0]
+      effect.setFrameBuffer(frameBuffers[0])
       effect.setTexture(cameraTextures[1])
       effect.setTextureMatrix(captureTextureTransform)
       effect.render(true)
-    }
-//    if (renderEffect == null) {
-//      return
-//    }
-//
-//    if (renderEffect is RenderEffect) {
-//
-//      val effect = renderEffect as RenderEffect
-//
-//      initImageTextures()
-//      initRenderBuffers()
-//
-//      (renderEffect as RenderEffect?)?.frameBufferObject = frameBuffers[0]
-//      effect.setTexture(cameraTextures[1])
-//      effect.setTextureMatrix(captureTextureTransform)
-//      effect.render(true)
-//    }
-  }
-
-  fun initializeEffect(effectConfig: EffectConfig) {
-
-    view.context?.let {
-      val shaderManager = ShaderSourceFetcher(it)
-
-      shaderSource = shaderManager.loadShaderProgram("basicVertex", "effect")
-
-      val renderEffect = RenderEffect(shaderSource, effectConfig)
-
-      setActiveEffect(renderEffect)
     }
   }
 
@@ -192,13 +137,6 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
 
       effectLock.release()
     }
-  }
-
-  fun setEffectConfig(effectConfig: EffectConfig) {
-
-    val renderEffect = RenderEffect(shaderSource, effectConfig)
-
-    setActiveEffect(renderEffect)
   }
 
   fun getPreviewTexture(): SurfaceTexture {
@@ -243,7 +181,7 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
     glInit = true
   }
 
-  fun initExternalTextures() {
+  private fun initExternalTextures() {
 
     glDeleteTextures(cameraTextures.size, cameraTextures, 0)
 
@@ -258,7 +196,7 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
     }
   }
 
-  fun initImageTextures() {
+  private fun initImageTextures() {
 
     glDeleteTextures(imageTextures.size, imageTextures, 0)
 
@@ -275,7 +213,7 @@ class CameraGLRenderer(val view: CameraGLSurfaceView) : GLSurfaceView.Renderer, 
     }
   }
 
-  fun initRenderBuffers() {
+  private fun initRenderBuffers() {
 
     glDeleteFramebuffers(1, frameBuffers, 0)
 

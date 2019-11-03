@@ -18,7 +18,6 @@ import androidx.navigation.Navigation
 import com.fireblade.effectivecamera.fragments.CameraControlsFragmentDirections
 import com.fireblade.effectivecamera.fragments.PermissionsFragment
 import com.fireblade.effectivecamera.graphics.IRendererEvents
-import com.fireblade.effectivecamera.graphics.effects.EffectConfig
 import com.fireblade.effectivecamera.graphics.services.EffectViewModel
 import com.fireblade.effectivecamera.navigation.CameraNavigator
 import com.fireblade.effectivecamera.navigation.ICameraNavigator
@@ -132,10 +131,7 @@ class CameraActivity :
 
     openCamera()
 
-    val viewModel = ViewModelProviders.of(this)[EffectViewModel::class.java]
-    viewModel.getEffectConfig().observe(this, androidx.lifecycle.Observer<EffectConfig> {
-      camera_preview.initializeEffect(it)
-    })
+    camera_preview.initializeEffect()
   }
 
   override fun onCaptureFinished() {

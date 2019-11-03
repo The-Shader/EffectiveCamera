@@ -11,9 +11,10 @@ import android.view.SurfaceHolder
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.fireblade.effectivecamera.CameraActivity
-import com.fireblade.effectivecamera.graphics.common.RenderEffect
+import com.fireblade.effectivecamera.graphics.effects.RenderEffect
 import com.fireblade.effectivecamera.graphics.effects.EffectConfig
 import com.fireblade.effectivecamera.graphics.services.EffectViewModel
+import com.fireblade.effectivecamera.graphics.services.ShaderSourceFetcher
 
 class CameraGLSurfaceView(context: Context, attrs: AttributeSet) : GLSurfaceView(context, attrs) {
 
@@ -29,7 +30,7 @@ class CameraGLSurfaceView(context: Context, attrs: AttributeSet) : GLSurfaceView
     }
   }
 
-  lateinit var effectObserver: Observer<EffectConfig>
+  private lateinit var effectObserver: Observer<EffectConfig>
 
   init {
     setEGLContextClientVersion(3)
@@ -55,24 +56,19 @@ class CameraGLSurfaceView(context: Context, attrs: AttributeSet) : GLSurfaceView
     renderer.setCaptureResolution(resolution)
   }
 
-  fun initializeEffect(effectConfig: EffectConfig) {
+  fun initializeEffect() {
 
-    renderer.initializeEffect(effectConfig)
+    val shaderManager = ShaderSourceFetcher(context)
+    val shaderSource = shaderManager.loadShaderProgram("basicVertex", "effect")
+
     effectObserver = Observer {
-      renderer.setEffectConfig(it)
+      renderer.setActiveEffect(RenderEffect(shaderSource, it))
     }
     effectViewModel.getEffectConfig().observeForever(effectObserver)
   }
 
-  fun setRenderEffect(renderEffect: RenderEffect) {
-    renderer.setActiveEffect(renderEffect)
-  }
-
-  fun setEffectConfig(effectConfig: EffectConfig) {
-    renderer.setEffectConfig(effectConfig)
-  }
-
   fun renderingContextInitialized() {
+
     listenerHandler.post {
       surfaceEventListeners.map {
         it.onRenderingContextCreated()

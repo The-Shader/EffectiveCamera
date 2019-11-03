@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.fireblade.effectivecamera.graphics.effects.EffectConfig
 import com.fireblade.effectivecamera.graphics.effects.FloatEffectAttribute
+import com.fireblade.effectivecamera.graphics.effects.IRenderEffect
 
 class EffectViewModel : ViewModel() {
   private val effectConfig: MutableLiveData<EffectConfig> =  MutableLiveData(EffectConfig("Normal"))
@@ -17,7 +18,7 @@ class EffectViewModel : ViewModel() {
 
   fun changeProperty(property: FloatEffectAttribute) {
     effectConfig.value?.let {
-      it.properties.get(property.name)?.currentValue = property.currentValue
+      it.properties[property.name]?.currentValue = property.currentValue
     }
   }
 }
