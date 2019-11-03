@@ -1,39 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/nav_graph"
-            app:startDestination="@id/permissions_fragment">
+        app:startDestination="@id/cameraControlsFragment">
 
     <fragment
-        android:id="@+id/permissions_fragment"
-        android:name="com.fireblade.effectivecamera.fragments.PermissionsFragment"
-        android:label="PermissionsFragment">
+            android:id="@+id/permissions_fragment"
+            android:name="com.fireblade.effectivecamera.fragments.PermissionsFragment"
+            android:label="PermissionsFragment">
         <action
-            android:id="@+id/action_permissions_to_camera"
-            app:destination="@+id/camera_fragment"
-            app:popUpTo="@id/permissions_fragment"
-            app:popUpToInclusive="true"/>
+                android:id="@+id/action_permissions_fragment_to_cameraControlsFragment"
+                app:destination="@id/cameraControlsFragment" />
     </fragment>
 
     <fragment
-        android:id="@+id/camera_fragment"
-        android:name="com.fireblade.effectivecamera.fragments.CameraFragment"
-        android:label="CameraFragment">
+            android:id="@+id/cameraControlsFragment"
+            android:name="com.fireblade.effectivecamera.fragments.CameraControlsFragment"
+            android:label="CameraControlsFragment" >
         <action
-            android:id="@+id/action_camera_to_permissions"
-            app:destination="@+id/permissions_fragment"
-            app:popUpTo="@id/camera_fragment"
-            app:popUpToInclusive="true"/>
-        <action
-                android:id="@+id/action_camera_to_settings"
-                app:destination="@id/settings_fragment"
-                app:popUpTo="@id/camera_fragment" />
-
+                android:id="@+id/action_cameraControlsFragment_to_permissions_fragment"
+                app:destination="@id/permissions_fragment" />
     </fragment>
-    <fragment
-            android:id="@+id/settings_fragment"
-            android:name="com.fireblade.effectivecamera.fragments.SettingsFragment"
-            android:label="SettingsFragment" />
 
 </navigation>
