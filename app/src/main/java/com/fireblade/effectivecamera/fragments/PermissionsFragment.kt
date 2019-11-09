@@ -14,12 +14,14 @@ class PermissionsFragment : Fragment() {
 
   private val requestCamera = 2
 
+  private val requestStorage = 3
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     if (!hasPermissions(requireContext())) {
       requestPermissions(arrayOf(
-        Manifest.permission.CAMERA), requestCamera)
+        Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE), requestCamera)
     } else {
       Navigation.findNavController(requireActivity(), R.id.nav_fragment).navigate(
         PermissionsFragmentDirections.actionPermissionsFragmentToCameraControlsFragment()
@@ -30,7 +32,7 @@ class PermissionsFragment : Fragment() {
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     if (requestCode == requestCamera) {
-      if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+      if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
         Navigation.findNavController(requireActivity(), R.id.nav_fragment).navigate(
           PermissionsFragmentDirections.actionPermissionsFragmentToCameraControlsFragment()
         )
